@@ -37,11 +37,7 @@ void Robot::RobotInit()
     LeftFalcon1.ConfigSelectedFeedbackSensor(FeedbackDevice::IntegratedSensor,0,10);
     Turret.ConfigSelectedFeedbackSensor(FeedbackDevice::QuadEncoder,0,10);
     //Turret.ConfigSelectedFeedbackSensor(FeedbackDevice::CTRE_MagEncoder_Absolute,0,10);
-
-
-    
-
-
+  
 
   }
 
@@ -73,6 +69,8 @@ void Robot::RobotPeriodic()
     frc::SmartDashboard::PutNumber("targetSkew",targetSkew);
     frc::SmartDashboard::PutNumber("tx",targetOffsetAngle_Horizontal);
     frc::SmartDashboard::PutNumber("ty",targetOffsetAngle_Vertical);
+    frc::SmartDashboard::PutNumberArray("YPR", Pigeon.GetYawPitchRoll(ypr));
+    frc::SmartDashboard::PutNumber("Yaw",ypr[0]);
   }
 
 /**
@@ -88,6 +86,13 @@ void Robot::RobotPeriodic()
  */
 void Robot::AutonomousInit() 
   {
+    Turret.SetSelectedSensorPosition(0,0,10);
+    RightFalcon1.SetSelectedSensorPosition(0);
+    LeftFalcon1.SetSelectedSensorPosition(0);
+    Pigeon.SetYaw(0,10);
+    Robot::DrivePIDs();
+    Robot::DriveFollowers();
+     A = 0;
     m_autoSelected = m_chooser.GetSelected();
     // m_autoSelected = SmartDashboard::GetString(
     //     "Auto Selector", kAutoNameDefault);
@@ -98,21 +103,18 @@ void Robot::AutonomousInit()
     } else {
       // Default Auto goes here
     }
-        RightFalcon1.SetSelectedSensorPosition(0);
-        LeftFalcon1.SetSelectedSensorPosition(0);
-          Robot::DrivePIDs();
-          Robot::DriveFollowers();
-           A = 0;
+
   }
 
 void Robot::AutonomousPeriodic() 
   {
+    Pigeon.GetYawPitchRoll(ypr);
     LeftPosition = LeftFalcon1.GetSelectedSensorPosition(1);
     RightPosition = RightFalcon1.GetSelectedSensorPosition(1);
 
-    if (m_autoSelected == ForwardDrive)
-      {//Drive Forward
-      
+  if (m_autoSelected == ForwardDrive)
+    {
+      //Drive Forward
         switch (A)
           {
             case 0:
@@ -122,6 +124,7 @@ void Robot::AutonomousPeriodic()
                     RightFalcon1.Set(ControlMode::Position, 180377);
                     LeftFalcon1.Set(ControlMode::Position, 180377);
                     Intake.Set(.75);
+                    //Indexer.Set(ControlMode::PercentOutput, .5);
                     //A = 1;
                 }
             
@@ -134,31 +137,33 @@ void Robot::AutonomousPeriodic()
               if (RightFalcon1.GetSelectedSensorPosition()>=180377 or LeftFalcon1.GetSelectedSensorPosition()>=180377 )
                 {
                   //Stop
-                  // RightFalcon1.SetSelectedSensorPosition(0,0,10);
-                  // LeftFalcon1.SetSelectedSensorPosition(0,0,10);
-                  RightFalcon1.Set(ControlMode::Velocity,0);
-                  LeftFalcon1.Set(ControlMode::Velocity, 0);
-                  Intake.Set(.75);
-                  //RightFalcon1.ConfigPeakOutputForward(0,10);
-                  //LeftFalcon1.ConfigPeakOutputForward(0,10);
-                 if(RightFalcon1.GetSelectedSensorVelocity()<=10 and LeftFalcon1.GetSelectedSensorVelocity()<=10)
-                  {
-                    //A = 2;
+                    // RightFalcon1.SetSelectedSensorPosition(0,0,10);
+                    // LeftFalcon1.SetSelectedSensorPosition(0,0,10);
+                    RightFalcon1.Set(ControlMode::Velocity,0);
+                    LeftFalcon1.Set(ControlMode::Velocity, 0);
                     Intake.Set(.75);
+                    //Indexer.Set(ControlMode::PercentOutput, .5);
+                    //RightFalcon1.ConfigPeakOutputForward(0,10);
+                    //LeftFalcon1.ConfigPeakOutputForward(0,10);
+                    if(RightFalcon1.GetSelectedSensorVelocity()<=10 and LeftFalcon1.GetSelectedSensorVelocity()<=10)
+                      {
+                        //A = 2;
+                        Intake.Set(.75);
+                        //Indexer.Set(ControlMode::PercentOutput, .5);
+                      }
                   }
-                }
               else
                 {
                   // RightFalcon1.SetSelectedSensorPosition(0,0,10);
                   // LeftFalcon1.SetSelectedSensorPosition(0,0,10);
                   RightFalcon1.Set(ControlMode::Velocity,0);
                   LeftFalcon1.Set(ControlMode::Velocity, 0);
-                  if(RightFalcon1.GetSelectedSensorVelocity()<=50 and LeftFalcon1.GetSelectedSensorVelocity()<=50)
-                  {
-                    RightFalcon1.GetSelectedSensorPosition(0);
-                    LeftFalcon1.GetSelectedSensorPosition(0);
-                    //A = 2;
-                  }
+                    if(RightFalcon1.GetSelectedSensorVelocity()<=50 and LeftFalcon1.GetSelectedSensorVelocity()<=50)
+                      {
+                        RightFalcon1.GetSelectedSensorPosition(0);
+                        LeftFalcon1.GetSelectedSensorPosition(0);
+                        //A = 2;
+                      }
                 }
             break;
             case 2:
@@ -175,18 +180,18 @@ void Robot::AutonomousPeriodic()
               if ((RightFalcon1.GetSelectedSensorPosition()<=100 and RightFalcon1.GetSelectedSensorPosition()>=-50000) and (LeftFalcon1.GetSelectedSensorPosition()<=100 and LeftFalcon1.GetSelectedSensorPosition()>=-50000))
                 {
                   //Go Backward
-                  RightFalcon1.Set(ControlMode::Position, -60000);
-                  LeftFalcon1.Set(ControlMode::Position, -60000);
+                    RightFalcon1.Set(ControlMode::Position, -60000);
+                    LeftFalcon1.Set(ControlMode::Position, -60000);
                 }
               else if (RightFalcon1.GetSelectedSensorPosition()<=-50000 and LeftFalcon1.GetSelectedSensorPosition()<= -50000)
                 {
                   A = 3;
                 }
               else
-              {
-                LeftFalcon1.SetSelectedSensorPosition(0);
-                RightFalcon1.SetSelectedSensorPosition(0);
-              }
+                {
+                  LeftFalcon1.SetSelectedSensorPosition(0);
+                  RightFalcon1.SetSelectedSensorPosition(0);
+                }
             break;
             case 3:
               if(RightFalcon1.GetSelectedSensorPosition()<=-50000 and LeftFalcon1.GetSelectedSensorPosition()<=-50000)
@@ -200,10 +205,10 @@ void Robot::AutonomousPeriodic()
               /*if (RightFalcon1.GetSelectedSensorPosition()<=-100000 and LeftFalcon1.GetSelectedSensorPosition()<=-100000)
                 {
                   //Stop motors and reset encoders
-                  RightFalcon1.Set(ControlMode::PercentOutput, 0);
-                  LeftFalcon1.Set(ControlMode::PercentOutput, 0);
-                  RightFalcon1.SetSelectedSensorPosition(0);
-                  LeftFalcon1.SetSelectedSensorPosition(0);
+                    RightFalcon1.Set(ControlMode::PercentOutput, 0);
+                    LeftFalcon1.Set(ControlMode::PercentOutput, 0);
+                    RightFalcon1.SetSelectedSensorPosition(0);
+                    LeftFalcon1.SetSelectedSensorPosition(0);
                 }
               if (RightFalcon1.GetSelectedSensorPosition()<=100 and LeftFalcon1.GetSelectedSensorPosition()<=100)
                 {
@@ -213,180 +218,199 @@ void Robot::AutonomousPeriodic()
                 }*/
             break;
           }  
-      }
-    if (m_autoSelected == TrenchShootSix)
-     {
-                switch (A)
-          {
-            case 0:
-              if(RightFalcon1.GetSelectedSensorPosition()<=180377 and LeftFalcon1.GetSelectedSensorPosition()<=180377) //130377
-                {
-                  //Go forward 
-                    RightFalcon1.Set(ControlMode::Position, 180377);
-                    LeftFalcon1.Set(ControlMode::Position, 180377);
-                    Intake.Set(.75);
-                    //A = 1;
-                }
+    }
+  if (m_autoSelected == TrenchShootSix)
+    {
+      switch (A)
+        {
+          case 0:
+            if(RightFalcon1.GetSelectedSensorPosition()<=180377 and LeftFalcon1.GetSelectedSensorPosition()<=180377) //130377
+              {
+                //Go forward 
+                  Turret.Set(ControlMode::Position, 14000);
+                  RightFalcon1.Set(ControlMode::Position, 180377);
+                  LeftFalcon1.Set(ControlMode::Position, 180377);
+                  Intake.Set(.75);
+                  //Indexer.Set(ControlMode::PercentOutput, .5);
+                  //A = 1;
+              }
             
-              if(RightFalcon1.GetSelectedSensorPosition()>=180377 and LeftFalcon1.GetSelectedSensorPosition()>=180377) //half of 130377
-                {
-                  A = 1;
-                }
-            break;
-            case 1:
-              if (RightFalcon1.GetSelectedSensorPosition()>=180377 or LeftFalcon1.GetSelectedSensorPosition()>=180377 )
-                {
-                  //Stop
+            if(RightFalcon1.GetSelectedSensorPosition()>=180377 and LeftFalcon1.GetSelectedSensorPosition()>=180377) //half of 130377
+              {
+                A = 1;
+              }
+          break;
+          case 1:
+            if (RightFalcon1.GetSelectedSensorPosition()>=180377 or LeftFalcon1.GetSelectedSensorPosition()>=180377 )
+              {
+                //Stop
                   // RightFalcon1.SetSelectedSensorPosition(0,0,10);
                   // LeftFalcon1.SetSelectedSensorPosition(0,0,10);
                   RightFalcon1.Set(ControlMode::Velocity,0);
                   LeftFalcon1.Set(ControlMode::Velocity, 0);
                   Intake.Set(.75);
+                  Robot::Limelight();
+                  //Indexer.Set(ControlMode::PercentOutput, .5);
                   //RightFalcon1.ConfigPeakOutputForward(0,10);
                   //LeftFalcon1.ConfigPeakOutputForward(0,10);
                  if(RightFalcon1.GetSelectedSensorVelocity()<=10 and LeftFalcon1.GetSelectedSensorVelocity()<=10)
                   {
                     //A = 2;
                     Intake.Set(.75);
+                    Robot::Limelight();
+                    //Indexer.Set(ControlMode::PercentOutput, .5);
                   }
-                }
-              else
-                {
-                  // RightFalcon1.SetSelectedSensorPosition(0,0,10);
-                  // LeftFalcon1.SetSelectedSensorPosition(0,0,10);
-                  RightFalcon1.Set(ControlMode::Velocity,0);
-                  LeftFalcon1.Set(ControlMode::Velocity, 0);
+              }
+            else
+              {
+                // RightFalcon1.SetSelectedSensorPosition(0,0,10);
+                // LeftFalcon1.SetSelectedSensorPosition(0,0,10);
+                RightFalcon1.Set(ControlMode::Velocity,0);
+                LeftFalcon1.Set(ControlMode::Velocity, 0);
+                //Move Turret
                   if(RightFalcon1.GetSelectedSensorVelocity()<=50 and LeftFalcon1.GetSelectedSensorVelocity()<=50)
                   {
                     RightFalcon1.GetSelectedSensorPosition(0);
                     LeftFalcon1.GetSelectedSensorPosition(0);
                     //A = 2;
                   }
-                }
+              }
             break;
+           }
       }
-  }
   if(m_autoSelected == CenterShootThree) 
     {
         // Default Auto goes here
-        Robot::StraightLine();
+        switch (A)
+        {
+        case 0:
+          Robot::Limelight();
+
+          break;
+        
+        case 1:
+
+          break;
+        }
     }
   if(m_autoSelected==TrenchShootEight)
-  {
-            switch (A)
-          {
-            case 0:
-              if(RightFalcon1.GetSelectedSensorPosition()<=280377 and LeftFalcon1.GetSelectedSensorPosition()<=280377) //130377
-                {
-                  //Go forward 
-                    RightFalcon1.Set(ControlMode::Position, 280377);
-                    LeftFalcon1.Set(ControlMode::Position, 280377);
-                    Intake.Set(.95);
-                    //A = 1;
-                }
-            
-              if(RightFalcon1.GetSelectedSensorPosition()>=280377 and LeftFalcon1.GetSelectedSensorPosition()>=280377) //half of 130377
-                {
-                  A = 1;
-                }
-            break;
-            case 1:
-              if (RightFalcon1.GetSelectedSensorPosition()>=280377 or LeftFalcon1.GetSelectedSensorPosition()>=280377 )
-                {
-                  //Stop
-                  // RightFalcon1.SetSelectedSensorPosition(0,0,10);
-                  // LeftFalcon1.SetSelectedSensorPosition(0,0,10);
-                  RightFalcon1.Set(ControlMode::Velocity,0);
-                  LeftFalcon1.Set(ControlMode::Velocity, 0);
+    {
+      switch (A)
+        {
+          //case 0:
+            //Shoot
+          //break;
+          case 0: //1:
+            if(RightFalcon1.GetSelectedSensorPosition()<=280377 and LeftFalcon1.GetSelectedSensorPosition()<=280377) //130377
+              {
+                //Go forward 
+                  RightFalcon1.Set(ControlMode::Position, 280377);
+                  LeftFalcon1.Set(ControlMode::Position, 280377);
                   Intake.Set(.95);
-                  //RightFalcon1.ConfigPeakOutputForward(0,10);
-                  //LeftFalcon1.ConfigPeakOutputForward(0,10);
-                 if(RightFalcon1.GetSelectedSensorVelocity()<=10 and LeftFalcon1.GetSelectedSensorVelocity()<=10)
-                  {
-                    A = 2;
-                     RightFalcon1.SetSelectedSensorPosition(0,0,10);
-                    LeftFalcon1.SetSelectedSensorPosition(0,0,10);
-                    Intake.Set(.95);
-                  }
-                }
-              else
+                  //Indexer.Set(ControlMode::PercentOutput, .5);
+                  //A = 1;
+              }
+            
+            if(RightFalcon1.GetSelectedSensorPosition()>=280377 and LeftFalcon1.GetSelectedSensorPosition()>=280377) 
+              {
+                A = 1;
+              }
+          break;
+          case 1: //2
+            if (RightFalcon1.GetSelectedSensorPosition()>=280377 or LeftFalcon1.GetSelectedSensorPosition()>=280377 )
                 {
-                  // RightFalcon1.SetSelectedSensorPosition(0,0,10);
-                  // LeftFalcon1.SetSelectedSensorPosition(0,0,10);
-                  RightFalcon1.Set(ControlMode::Velocity,0);
-                  LeftFalcon1.Set(ControlMode::Velocity, 0);
+                  //Stop 
+                    // RightFalcon1.SetSelectedSensorPosition(0,0,10);
+                    // LeftFalcon1.SetSelectedSensorPosition(0,0,10);
+                    RightFalcon1.Set(ControlMode::Velocity,0);
+                    LeftFalcon1.Set(ControlMode::Velocity, 0);
+                    Intake.Set(.95);
+                    //Indexer.Set(ControlMode::PercentOutput, .5);
+                    //RightFalcon1.ConfigPeakOutputForward(0,10);
+                    //LeftFalcon1.ConfigPeakOutputForward(0,10);
+              if(RightFalcon1.GetSelectedSensorVelocity()<=10 and LeftFalcon1.GetSelectedSensorVelocity()<=10)
+                {
+                  //resets encoders
+                  A = 2;
+                  RightFalcon1.SetSelectedSensorPosition(0,0,10);
+                  LeftFalcon1.SetSelectedSensorPosition(0,0,10);
+                  Intake.Set(.95);
+                  //Indexer.Set(ControlMode::PercentOutput, .5);
+                }
+              }
+            else
+              {
+                // RightFalcon1.SetSelectedSensorPosition(0,0,10);
+                // LeftFalcon1.SetSelectedSensorPosition(0,0,10);
+                RightFalcon1.Set(ControlMode::Velocity,0);
+                LeftFalcon1.Set(ControlMode::Velocity, 0);
                   if(RightFalcon1.GetSelectedSensorVelocity()<=50 and LeftFalcon1.GetSelectedSensorVelocity()<=50)
-                  {
-                    RightFalcon1.SetSelectedSensorPosition(0,0,10);
-                    LeftFalcon1.SetSelectedSensorPosition(0,0,10);
-                    Intake.Set(.95);
-                    A = 2;
-                  }
+                    {
+                      RightFalcon1.SetSelectedSensorPosition(0,0,10);
+                      LeftFalcon1.SetSelectedSensorPosition(0,0,10);
+                      Intake.Set(.95);
+                      //Indexer.Set(ControlMode::PercentOutput, .5);
+                      A = 2;
+                    }
                 }
-            break;
-               case 2:
-              /*if(RightFalcon1.GetSelectedSensorPosition()>=130377 and LeftFalcon1.GetSelectedSensorPosition()>=130377)
-                {
-                  RightFalcon1.Set(ControlMode::Position, 30377);
-                  LeftFalcon1.Set(ControlMode::Position, 30377);
-                  A = 3;
-                }
-              else if(RightFalcon1.GetSelectedSensorPosition()<=80377 and LeftFalcon1.GetSelectedSensorPosition()<=80377)
-                {
-                  A = 3;
-                }*/
+          break;
+          case 2: //3
               if ((RightFalcon1.GetSelectedSensorPosition()<=100 and RightFalcon1.GetSelectedSensorPosition()>=-90000) and (LeftFalcon1.GetSelectedSensorPosition()<=100 and LeftFalcon1.GetSelectedSensorPosition()>=-90000))
                 {
                   //Go Backward
                   RightFalcon1.Set(ControlMode::Position, -100000);
                   LeftFalcon1.Set(ControlMode::Position, -100000);
                   Intake.Set(.95);
+                  //Indexer.Set(ControlMode::PercentOutput, .5);
                 }
               else if (RightFalcon1.GetSelectedSensorPosition()<=-90000 and LeftFalcon1.GetSelectedSensorPosition()<= -90000)
                 {
                   A = 3;
                   Intake.Set(.95);
+                  //Indexer.Set(ControlMode::PercentOutput, .5);
                 }
               else 
-              {
-                // LeftFalcon1.SetSelectedSensorPosition(0);
-                // RightFalcon1.SetSelectedSensorPosition(0);
-                Intake.Set(.95);
-               }
-            break;
-            case 3:
-              if(RightFalcon1.GetSelectedSensorPosition()<=-90000 and LeftFalcon1.GetSelectedSensorPosition()<=-90000)
                 {
-                  RightFalcon1.Set(ControlMode::Velocity, 0);
-                  LeftFalcon1.Set(ControlMode::Velocity, 0);
-                  RightFalcon1.SetSelectedSensorPosition(0,0,10);
-                  LeftFalcon1.SetSelectedSensorPosition(0,0,10);
+                  // LeftFalcon1.SetSelectedSensorPosition(0);
+                  // RightFalcon1.SetSelectedSensorPosition(0);
                   Intake.Set(.95);
-
+                  //Indexer.Set(ControlMode::PercentOutput, .5);
                 }
-              /*if (RightFalcon1.GetSelectedSensorPosition()<=-100000 and LeftFalcon1.GetSelectedSensorPosition()<=-100000)
-                {
-                  //Stop motors and reset encoders
+          break;
+          case 3: //4
+            if(RightFalcon1.GetSelectedSensorPosition()<=-90000 and LeftFalcon1.GetSelectedSensorPosition()<=-90000)
+              {
+                RightFalcon1.Set(ControlMode::Velocity, 0);
+                LeftFalcon1.Set(ControlMode::Velocity, 0);
+                RightFalcon1.SetSelectedSensorPosition(0,0,10);
+                LeftFalcon1.SetSelectedSensorPosition(0,0,10);
+                Intake.Set(.95);
+                //Indexer.Set(ControlMode::PercentOutput, .5);
+
+              }
+            /*if (RightFalcon1.GetSelectedSensorPosition()<=-100000 and LeftFalcon1.GetSelectedSensorPosition()<=-100000)
+              {
+                //Stop motors and reset encoders
                   RightFalcon1.Set(ControlMode::PercentOutput, 0);
                   LeftFalcon1.Set(ControlMode::PercentOutput, 0);
                   RightFalcon1.SetSelectedSensorPosition(0);
                   LeftFalcon1.SetSelectedSensorPosition(0);
-                }
-              if (RightFalcon1.GetSelectedSensorPosition()<=100 and LeftFalcon1.GetSelectedSensorPosition()<=100)
-                {
-                  RightFalcon1.Set(ControlMode::Position,0);
-                  LeftFalcon1.Set(ControlMode::Position,0);
-                  A = 2;
-                }*/
-            break;
-  }
-  }
+              }
+            if (RightFalcon1.GetSelectedSensorPosition()<=100 and LeftFalcon1.GetSelectedSensorPosition()<=100)
+              {
+                RightFalcon1.Set(ControlMode::Position,0);
+                LeftFalcon1.Set(ControlMode::Position,0);
+                A = 2;
+              }*/
+          break;
+        }
+    }
   }
 
 void Robot::TeleopInit() 
   {
     Robot::DrivePIDs();
-    Turret.SetSelectedSensorPosition(0,0,10);
+    
 
   }
 void Robot::TeleopPeriodic() 
@@ -409,23 +433,23 @@ void Robot::TankDrive()
    //LeftDrive.Set(ControlMode::PercentOutput, Driver2.GetRawAxis(1);
    LeftFalcon1.Set(ControlMode::PercentOutput, Driver.GetY(frc::XboxController::kLeftHand)*-.65);
    RightFalcon1.Set(ControlMode::PercentOutput, Driver.GetY(frc::XboxController::kRightHand)*-.65);
-  /*if (Driver.GetAButton() ==1 )
-  {
-       RightFalcon1.Set(ControlMode::Position,40000);
-      LeftFalcon1.Set(ControlMode::Position,40000);
-  }
-  else {
-    RightFalcon1.Set(ControlMode::Position, 0 );
-    LeftFalcon1.Set(ControlMode::Position, 0);
-  } */
+    /*if (Driver.GetAButton() ==1 )
+    {
+        RightFalcon1.Set(ControlMode::Position,40000);
+        LeftFalcon1.Set(ControlMode::Position,40000);
+    }
+    else {
+      RightFalcon1.Set(ControlMode::Position, 0 );
+      LeftFalcon1.Set(ControlMode::Position, 0);
+    } */
   }
 
 void Robot::DriveFollowers()
   {
    //LeftFalcon2.Set(ControlMode::PercentOutput, LeftFalcon1.GetMotorOutputPercent());
    //RightFalcon2.Set(ControlMode::PercentOutput, RightFalcon1.GetMotorOutputPercent());
-  RightFalcon2.Follow(RightFalcon1);
-  LeftFalcon2.Follow(LeftFalcon1);
+    RightFalcon2.Follow(RightFalcon1);
+    LeftFalcon2.Follow(LeftFalcon1);
 
   }
 void Robot::Limelight()
@@ -490,14 +514,18 @@ void Robot::Limelight()
     frc::SmartDashboard::PutNumber("VelocityTarget",targetOffsetAngle_Horizontal*280 );
     
     frc::SmartDashboard::PutNumber("targetvalid",targetValid);
-   if(targetOffsetAngle_Horizontal<8 and targetOffsetAngle_Horizontal>-8)
-    {
-    Robot::TurretPIDsShort();
-    }
+    if((targetOffsetAngle_Horizontal<8 and targetOffsetAngle_Horizontal>3 )or (targetOffsetAngle_Horizontal>-8 and targetOffsetAngle_Horizontal<-3))
+      {
+        Robot::TurretPIDsShort();
+      }
     if(targetOffsetAngle_Horizontal>8 or targetOffsetAngle_Horizontal<-8)
-    {
-      Robot::TurretPIDsLong();
-    }
+      {
+        Robot::TurretPIDsLong();
+      }
+    if(targetOffsetAngle_Horizontal<3 and targetOffsetAngle_Horizontal>-3)
+      {
+        Robot::TurretPIDsSuperShort();
+      }
   }
 void Robot::ColorSensor()
   {
@@ -513,20 +541,20 @@ void Robot::ColorSensor()
 void Robot::Shooting()
   {
     if(Turret.GetSelectedSensorPosition()>21000)
-    {
-      Turret.ConfigPeakOutputForward(0,10);
-      Turret.ConfigPeakOutputReverse(-.5,10);
-    }
+      {
+        Turret.ConfigPeakOutputForward(0,10);
+        Turret.ConfigPeakOutputReverse(-.5,10);
+      }
     else if(Turret.GetSelectedSensorPosition()<-21000)
-    {
-      Turret.ConfigPeakOutputReverse(0,10);
-      Turret.ConfigPeakOutputForward(.5,10);
-    }
+      {
+        Turret.ConfigPeakOutputReverse(0,10);
+        Turret.ConfigPeakOutputForward(.5,10);
+      }
     else
-    {
-      Turret.ConfigPeakOutputForward(.5,10);
-      Turret.ConfigPeakOutputReverse(-.5,10);
-    }
+      {
+        Turret.ConfigPeakOutputForward(.5,10);
+        Turret.ConfigPeakOutputReverse(-.5,10);
+      }
     frc::SmartDashboard::PutNumber("TurretVelocity",Turret.GetSelectedSensorVelocity());
     Robot::ShootingPIDs();
 
@@ -558,16 +586,72 @@ void Robot::Shooting()
         ShooterSpeed = 4000;
       }
     else if ((Distance <= 120 and Manipulator.GetBumper(frc::XboxController::kRightHand)==1) or Manipulator.GetXButton() ==1 )
-    {
-        HoodPosition = 1 ;
-        ShooterSpeed = 4000;
-    }
+      {
+          HoodPosition = 1 ;
+          ShooterSpeed = 4000;
+      }
     else
       {//Defualt Collapsed Position 
         HoodPosition = 3 ;
         ShooterSpeed = 2000;
       }
 
+
+  }
+void Robot::ShootingAuto()
+  {
+    //Turret Restraints
+      if(Turret.GetSelectedSensorPosition()>21000)
+        {
+          Turret.ConfigPeakOutputForward(0,10);
+          Turret.ConfigPeakOutputReverse(-.5,10);
+        }
+      else if(Turret.GetSelectedSensorPosition()<-21000)
+        {
+          Turret.ConfigPeakOutputReverse(0,10);
+          Turret.ConfigPeakOutputForward(.5,10);
+        }
+      else
+      {
+        Turret.ConfigPeakOutputForward(.5,10);
+        Turret.ConfigPeakOutputReverse(-.5,10);
+      }
+    //Setting Shooter Velocity
+      if (HoodPosition==1)
+        {
+          //BumperShot
+            ShooterHood1.Set(false);
+            ShooterHood2.Set(false);
+            Shooter1.Set(rev::ControlType::kVelocity);
+            Shooter1.Set(4000);
+            Shooter2.Follow(Shooter1, true);
+        }
+      else if (HoodPosition==2)
+        {
+          //Intiation Line
+            ShooterHood1.Set(true);
+            ShooterHood2.Set(false);
+            Shooter1.Set(rev::ControlType::kVelocity);
+            Shooter1.Set(4000);
+            Shooter2.Follow(Shooter1, true);
+        }
+      else if (HoodPosition==3)
+        {
+          //TrenchShot
+            ShooterHood1.Set(true);
+            ShooterHood2.Set(true);
+            Shooter1.Set(rev::ControlType::kVelocity);
+            Shooter1.Set(4000);
+            Shooter2.Follow(Shooter1, true);
+        }
+      if (Driver.GetXButton()==1)
+        {
+          KickerWheel.Set(.80);
+        }
+      else if(Driver.GetXButton()==0)
+        {
+          KickerWheel.Set(0);
+        }
   }
 void Robot::Intaking()
   {
@@ -576,6 +660,9 @@ void Robot::Intaking()
       double IntakeP = .000006;
       double IntakeI = .0000001;
       double IntakeD = 0;
+    //Current Limit
+      Intake.SetSmartCurrentLimit(25, 30, 20000);
+      Intake.SetSecondaryCurrentLimit(30, 20);
       
     //Configuring PIDs
       rev::CANPIDController IntakePIDController = Intake.GetPIDController();
@@ -592,7 +679,7 @@ void Robot::Intaking()
         double  SetPoint = 0.0;
        // IntakePIDController.SetReference(SetPoint, rev::ControlType::kVelocity);
       //Intake In
-      if (Driver.GetBumper(frc::XboxController::kRightHand)==1 and Manipulator.GetBumper(frc::XboxController::kLeftHand)==0)
+      if (Driver.GetBumper(frc::XboxController::kRightHand)==1 and Driver.GetBumper(frc::XboxController::kLeftHand)==0)
         {
         //  IntakePIDController.SetReference(SetPoint, rev::ControlType::kVelocity);
         //  Intake.Set(rev::ControlType::kVelocity);
@@ -602,7 +689,7 @@ void Robot::Intaking()
          //IntakePosition.Set(true);
         }
       //Intake Out
-      else if (Driver.GetBumper(frc::XboxController::kRightHand)==0 and Manipulator.GetBumper(frc::XboxController::kLeftHand)==1)
+      else if (Driver.GetBumper(frc::XboxController::kRightHand)==0 and Driver.GetBumper(frc::XboxController::kLeftHand)==1)
         {
         Intake.Set(-.75);
         //IntakePosition.Set(true);        
@@ -614,12 +701,25 @@ void Robot::Intaking()
         //  IntakePosition.Set(false);
         }
         frc::SmartDashboard::PutNumber("SetPoint", SetPoint);
-       }
+
+       
+
+  }
 void Robot::Indexing()
   {//talon
+    Indexer.ConfigPeakCurrentLimit(30, 40);
       //Constant Turn
-      Indexer.Set(ControlMode::PercentOutput, .25);
-
+      //Indexer.Set(ControlMode::PercentOutput, .25);
+    // if(Driver.GetBumper(frc::XboxController::kRightHand)==1)
+    //   {
+    //     Indexer.Set(ControlMode::PercentOutput, .5);
+    //     //Mechanum wheels spins backward
+    //   }
+    // else if(Driver.GetBumper(frc::XboxController::kRightHand)==0)
+    //   {
+    //     Indexer.Set(ControlMode::PercentOutput, .25);
+    //     //Mechanum wheelse spins backward
+    //   }
   }
 void Robot::Climbing()
   {
@@ -654,10 +754,16 @@ void Robot::DrivePIDs()
     LeftFalcon1.SetNeutralMode(Coast);
     RightFalcon2.SetNeutralMode(Coast);
     LeftFalcon2.SetNeutralMode(Coast);
+  //Peak Outputs
     LeftFalcon1.ConfigPeakOutputForward(.85);
     RightFalcon1.ConfigPeakOutputForward(.85);
     LeftFalcon1.ConfigPeakOutputReverse(-.85);
     RightFalcon1.ConfigPeakOutputReverse(-.85);
+  //Current Limits
+    LeftFalcon1.ConfigSupplyCurrentLimit(SupplyCurrentLimitConfiguration(true, 40, 35, 20));   
+    LeftFalcon2.ConfigSupplyCurrentLimit(SupplyCurrentLimitConfiguration(true, 40, 35, 20));
+    RightFalcon1.ConfigSupplyCurrentLimit(SupplyCurrentLimitConfiguration(true, 40, 35, 20));
+    RightFalcon2.ConfigSupplyCurrentLimit(SupplyCurrentLimitConfiguration(true, 40, 35,20));
   //Setting up Sensors
     RightFalcon1.SetSensorPhase(false);
     LeftFalcon1.SetSensorPhase(false);
@@ -690,6 +796,11 @@ void Robot::ShootingPIDs()
       ShooterPIDController.SetP(ShooterP);
       ShooterPIDController.SetI(ShooterI);
       ShooterPIDController.SetD(ShooterD);
+    //Current Limits
+      Shooter1.SetSmartCurrentLimit(25, 40, 11433);
+      Shooter2.SetSmartCurrentLimit(25, 40, 11433);
+      Shooter1.SetSecondaryCurrentLimit(40, 20);
+      Shooter2.SetSecondaryCurrentLimit(40, 20);
     //Encoder
       Shooter1.GetEncoder();
       Shooter2.GetEncoder();
@@ -726,19 +837,35 @@ void Robot::TurretPIDsLong()
       Turret.Config_kD(0,TurretD,10);
       Turret.SetNeutralMode(Brake);
   }
+void Robot::TurretPIDsSuperShort()
+  {
+      //Talon
+    //Defining PID
+      double TurretP = 0.15;
+      double TurretI = 0;
+      double TurretD = 0.9;
+    //Configuring PIDs
+      Turret.Config_kP(0,TurretP,10);
+      Turret.Config_kI(0,TurretI,10);
+      Turret.Config_kD(0,TurretD,10);
+      Turret.SetNeutralMode(Brake);
+  }
 void Robot::ClimbPIDs()
   {
-    //Rev
+    //Falcon
     //Definging PIDs
       double ClimbP = 0;
       double ClimbI = 0;
       double ClimbD = 0;
       double ClimbF = .05;
+    //Current Limits
+      Climber1.ConfigSupplyCurrentLimit(SupplyCurrentLimitConfiguration(true, 40, 35, 20));
+      Climber2.ConfigSupplyCurrentLimit(SupplyCurrentLimitConfiguration(true, 40, 35 ,20));
     //Configuring PIDs
-      Climber.Config_kP(0,ClimbP,10);
-      Climber.Config_kI(0,ClimbI,10);
-      Climber.Config_kD(0,ClimbD,10);
-      Climber.Config_kF(0,ClimbF,10);
+      Climber1.Config_kP(0,ClimbP,10);
+      Climber1.Config_kI(0,ClimbI,10);
+      Climber1.Config_kD(0,ClimbD,10);
+      Climber1.Config_kF(0,ClimbF,10);
      // rev::CANPIDController ClimbPIDController = Climber1.GetPIDController();
      /* ClimbPIDController.SetP(ClimbP);
       ClimbPIDController.SetI(ClimbI);
@@ -800,7 +927,49 @@ void Robot::StraightLine()
     LeftFalcon1.Set(ControlMode::Position, LeftPosition+100000);
     RightFalcon1.Set(ControlMode::Position, RightPosition+100000);
   }
-
+void Robot::Pidgeon()
+  {
+    if(ypr[0]>=5 and LeftFalcon1.GetSelectedSensorVelocity()>0)
+    {
+     LeftFalcon1.ConfigPeakOutputForward(.9);
+     LeftFalcon2.ConfigPeakOutputForward(.9);
+     RightFalcon1.ConfigPeakOutputForward(.8);
+     RightFalcon2.ConfigPeakOutputForward(.8);
+    }
+    else if (ypr[0]<=-5 and LeftFalcon1.GetSelectedSensorVelocity()>0)
+    {
+      LeftFalcon1.ConfigPeakOutputForward(.8);
+      LeftFalcon2.ConfigPeakOutputForward(.8);
+      RightFalcon1.ConfigPeakOutputForward(.9);
+      RightFalcon1.ConfigPeakOutputForward(.9);
+    }
+    else if (ypr[0]>=5 and LeftFalcon1.GetSelectedSensorVelocity()<0)
+    {
+      LeftFalcon1.ConfigPeakOutputReverse(-.8);
+      LeftFalcon2.ConfigPeakOutputReverse(-.8);
+      RightFalcon1.ConfigPeakOutputReverse(-.9);
+      RightFalcon2.ConfigPeakOutputReverse(-.9);
+    }
+    else if (ypr[0]<=-5 and LeftFalcon1.GetSelectedSensorVelocity()<0)
+    {
+      LeftFalcon1.ConfigPeakOutputReverse(-.9);
+      LeftFalcon2.ConfigPeakOutputReverse(-.9);
+      RightFalcon1.ConfigPeakOutputReverse(-.8);
+      LeftFalcon2.ConfigPeakOutputReverse(-.8);
+    }
+    else
+    {
+      LeftFalcon1.ConfigPeakOutputForward(.8);
+      LeftFalcon2.ConfigPeakOutputForward(.8);
+      RightFalcon1.ConfigPeakOutputForward(.8);
+      RightFalcon2.ConfigPeakOutputForward(.8);
+      LeftFalcon1.ConfigPeakOutputReverse(-.8);
+      LeftFalcon2.ConfigPeakOutputReverse(-.8);
+      RightFalcon1.ConfigPeakOutputReverse(-.8);
+      RightFalcon2.ConfigPeakOutputReverse(-.8);
+    }
+    
+  }
 #ifndef RUNNING_FRC_TESTS
 int main() { 
   return frc::StartRobot<Robot>(); 
