@@ -16,14 +16,13 @@
 #include <frc/WPILib.h>
 #include "rev/CANSparkMax.h"
 #include "rev/ColorSensorV3.h"
+#include "Constants.h"
+#include "Instrumentation.h"
+#include "TrialMotionProfile.h"
 
 void Robot::RobotInit() 
   {
-    //std::shared_ptr<NetworkTable> table = nt::NetworkTableInstance::GetDefault().GetTable("Limelight");
-      //double targetOffsetAngle_Horizontal = table->GetNumber("tx",0.0);
-    //double targetOffsetAngle_Vertical = table->GetNumber("ty",0.0);
-      //double targetArea =  table->GetNumber("ta",0.0);
-      //double targetSkew = table->GetNumber("ts",0.0);
+
     //Found on the limelight page with the API's (Change variablename & value)
       //nt::NetworkTableInstance::GetDefault("limelight")->GetNumber("<variablename>",0.0);
       //nt::NetworkTableinstance::GetDefault().GetTable("limelight")->PutNumber("<variablename>",<value>);   
@@ -65,12 +64,15 @@ void Robot::RobotPeriodic()
     double targetArea =  table->GetNumber("ta",0.0);
     double targetSkew = table->GetNumber("ts",0.0); 
     double targetValid = table->GetNumber("tv",0.0);
+     Distance = (TargetHeight-LimelightHeight)/tan((LimelightAngle-targetOffsetAngle_Vertical)*(180/PI));
     frc::SmartDashboard::PutNumber("targetArea", targetArea);
     frc::SmartDashboard::PutNumber("targetSkew",targetSkew);
     frc::SmartDashboard::PutNumber("tx",targetOffsetAngle_Horizontal);
     frc::SmartDashboard::PutNumber("ty",targetOffsetAngle_Vertical);
     frc::SmartDashboard::PutNumberArray("YPR", Pigeon.GetYawPitchRoll(ypr));
     frc::SmartDashboard::PutNumber("Yaw",ypr[0]);
+    frc::SmartDashboard::PutNumber("Distance", Distance);
+    frc::SmartDashboard::PutBoolean("TargetSpeed", TargetSpeed);
   }
 
 /**
@@ -92,6 +94,8 @@ void Robot::AutonomousInit()
     Pigeon.SetYaw(0,10);
     Robot::DrivePIDs();
     Robot::DriveFollowers();
+    Robot::ShootingPIDs();
+    //Robot::ShootingPIDs();
      A = 0;
     m_autoSelected = m_chooser.GetSelected();
     // m_autoSelected = SmartDashboard::GetString(
@@ -124,7 +128,7 @@ void Robot::AutonomousPeriodic()
                     RightFalcon1.Set(ControlMode::Position, 180377);
                     LeftFalcon1.Set(ControlMode::Position, 180377);
                     Intake.Set(.75);
-                    //Indexer.Set(ControlMode::PercentOutput, .5);
+                    //Indexer.Set(ControlMode::PercentOutput, -.5); 
                     //A = 1;
                 }
             
@@ -142,14 +146,14 @@ void Robot::AutonomousPeriodic()
                     RightFalcon1.Set(ControlMode::Velocity,0);
                     LeftFalcon1.Set(ControlMode::Velocity, 0);
                     Intake.Set(.75);
-                    //Indexer.Set(ControlMode::PercentOutput, .5);
+                    //Indexer.Set(ControlMode::PercentOutput, -.5);
                     //RightFalcon1.ConfigPeakOutputForward(0,10);
                     //LeftFalcon1.ConfigPeakOutputForward(0,10);
                     if(RightFalcon1.GetSelectedSensorVelocity()<=10 and LeftFalcon1.GetSelectedSensorVelocity()<=10)
                       {
                         //A = 2;
                         Intake.Set(.75);
-                        //Indexer.Set(ControlMode::PercentOutput, .5);
+                        //Indexer.Set(ControlMode::PercentOutput, -.5);
                       }
                   }
               else
@@ -231,7 +235,7 @@ void Robot::AutonomousPeriodic()
                   RightFalcon1.Set(ControlMode::Position, 180377);
                   LeftFalcon1.Set(ControlMode::Position, 180377);
                   Intake.Set(.75);
-                  //Indexer.Set(ControlMode::PercentOutput, .5);
+                  //Indexer.Set(ControlMode::PercentOutput, -.5);
                   //A = 1;
               }
             
@@ -250,7 +254,7 @@ void Robot::AutonomousPeriodic()
                   LeftFalcon1.Set(ControlMode::Velocity, 0);
                   Intake.Set(.75);
                   Robot::Limelight();
-                  //Indexer.Set(ControlMode::PercentOutput, .5);
+                  //Indexer.Set(ControlMode::PercentOutput, -.5);
                   //RightFalcon1.ConfigPeakOutputForward(0,10);
                   //LeftFalcon1.ConfigPeakOutputForward(0,10);
                  if(RightFalcon1.GetSelectedSensorVelocity()<=10 and LeftFalcon1.GetSelectedSensorVelocity()<=10)
@@ -258,7 +262,7 @@ void Robot::AutonomousPeriodic()
                     //A = 2;
                     Intake.Set(.75);
                     Robot::Limelight();
-                    //Indexer.Set(ControlMode::PercentOutput, .5);
+                    //Indexer.Set(ControlMode::PercentOutput, -.5);
                   }
               }
             else
@@ -307,7 +311,7 @@ void Robot::AutonomousPeriodic()
                   RightFalcon1.Set(ControlMode::Position, 280377);
                   LeftFalcon1.Set(ControlMode::Position, 280377);
                   Intake.Set(.95);
-                  //Indexer.Set(ControlMode::PercentOutput, .5);
+                  //Indexer.Set(ControlMode::PercentOutput, -.5);
                   //A = 1;
               }
             
@@ -325,7 +329,7 @@ void Robot::AutonomousPeriodic()
                     RightFalcon1.Set(ControlMode::Velocity,0);
                     LeftFalcon1.Set(ControlMode::Velocity, 0);
                     Intake.Set(.95);
-                    //Indexer.Set(ControlMode::PercentOutput, .5);
+                    //Indexer.Set(ControlMode::PercentOutput, -.5);
                     //RightFalcon1.ConfigPeakOutputForward(0,10);
                     //LeftFalcon1.ConfigPeakOutputForward(0,10);
               if(RightFalcon1.GetSelectedSensorVelocity()<=10 and LeftFalcon1.GetSelectedSensorVelocity()<=10)
@@ -335,7 +339,7 @@ void Robot::AutonomousPeriodic()
                   RightFalcon1.SetSelectedSensorPosition(0,0,10);
                   LeftFalcon1.SetSelectedSensorPosition(0,0,10);
                   Intake.Set(.95);
-                  //Indexer.Set(ControlMode::PercentOutput, .5);
+                  //Indexer.Set(ControlMode::PercentOutput, -.5);
                 }
               }
             else
@@ -361,20 +365,20 @@ void Robot::AutonomousPeriodic()
                   RightFalcon1.Set(ControlMode::Position, -100000);
                   LeftFalcon1.Set(ControlMode::Position, -100000);
                   Intake.Set(.95);
-                  //Indexer.Set(ControlMode::PercentOutput, .5);
+                  //Indexer.Set(ControlMode::PercentOutput, -.5);
                 }
               else if (RightFalcon1.GetSelectedSensorPosition()<=-90000 and LeftFalcon1.GetSelectedSensorPosition()<= -90000)
                 {
                   A = 3;
                   Intake.Set(.95);
-                  //Indexer.Set(ControlMode::PercentOutput, .5);
+                  //Indexer.Set(ControlMode::PercentOutput, -.5);
                 }
               else 
                 {
                   // LeftFalcon1.SetSelectedSensorPosition(0);
                   // RightFalcon1.SetSelectedSensorPosition(0);
                   Intake.Set(.95);
-                  //Indexer.Set(ControlMode::PercentOutput, .5);
+                  //Indexer.Set(ControlMode::PercentOutput, -.5);
                 }
           break;
           case 3: //4
@@ -385,7 +389,7 @@ void Robot::AutonomousPeriodic()
                 RightFalcon1.SetSelectedSensorPosition(0,0,10);
                 LeftFalcon1.SetSelectedSensorPosition(0,0,10);
                 Intake.Set(.95);
-                //Indexer.Set(ControlMode::PercentOutput, .5);
+                //Indexer.Set(ControlMode::PercentOutput, -.5);
 
               }
             /*if (RightFalcon1.GetSelectedSensorPosition()<=-100000 and LeftFalcon1.GetSelectedSensorPosition()<=-100000)
@@ -410,7 +414,9 @@ void Robot::AutonomousPeriodic()
 void Robot::TeleopInit() 
   {
     Robot::DrivePIDs();
-    
+    Robot::ShootingPIDs();
+    LoopCount = 0;
+    BumperShot = 0;
 
   }
 void Robot::TeleopPeriodic() 
@@ -421,6 +427,8 @@ void Robot::TeleopPeriodic()
    // Robot::Limelight();
     Robot::Intaking();
     Robot::Shooting();
+    Robot::Indexing();
+   // Compressor.SetClosedLoopControl(true);
   }
 
 void Robot::TestPeriodic() 
@@ -491,7 +499,7 @@ void Robot::Limelight()
     frc::SmartDashboard::PutNumber("targetSkew",targetSkew);
     frc::SmartDashboard::PutNumber("tx",targetOffsetAngle_Horizontal);
     frc::SmartDashboard::PutNumber("ty",targetOffsetAngle_Vertical);
-    Distance = (TargetHeight-LimelightHeight)/tan((LimelightAngle+targetOffsetAngle_Vertical)*(180/PI));
+    Distance = (TargetHeight-LimelightHeight)/tan((LimelightAngle-targetOffsetAngle_Vertical)*(180/PI));
     // if (targetOffsetAngle_Horizontal >= 10)
     // {
       
@@ -510,7 +518,7 @@ void Robot::Limelight()
     // }
     
     
-    Turret.Set(ControlMode::Velocity, (targetOffsetAngle_Horizontal*280));
+    Turret.Set(ControlMode::Velocity, (targetOffsetAngle_Horizontal*-280));
     frc::SmartDashboard::PutNumber("VelocityTarget",targetOffsetAngle_Horizontal*280 );
     
     frc::SmartDashboard::PutNumber("targetvalid",targetValid);
@@ -556,17 +564,17 @@ void Robot::Shooting()
         Turret.ConfigPeakOutputReverse(-.5,10);
       }
     frc::SmartDashboard::PutNumber("TurretVelocity",Turret.GetSelectedSensorVelocity());
-    Robot::ShootingPIDs();
+    //Robot::ShootingPIDs();
 
     //turret = Talon
-    Robot::ShooterEquations();
+    //Robot::ShooterEquations();
 
     //Manual Turret
     //Take Out Manual Turret and Manipulator 2  
     frc::SmartDashboard::PutNumber("TurretEncoder",Turret.GetSelectedSensorPosition(0));
     if( Manipulator.GetBumper(frc::XboxController::kRightHand)==0)
       {
-      Turret.Set(ControlMode::PercentOutput, Manipulator.GetX(frc::XboxController::kRightHand)*.25);
+      Turret.Set(ControlMode::PercentOutput, Manipulator.GetX(frc::XboxController::kRightHand)*-.25);
       }
     //LimelightTurret
     if(Manipulator.GetBumper(frc::XboxController::kRightHand)==1)
@@ -575,31 +583,137 @@ void Robot::Shooting()
       //Other Limelight
       }
     //Setting Hood Position 
-    if ((Distance >= 207 and Manipulator.GetBumper(frc::XboxController::kRightHand)== 1) or Manipulator.GetBButton() ==1 )
-      {
-        HoodPosition = 3 ;
-        ShooterSpeed = 4000;
-      }
-    else if ((Distance <= 207 and Distance>= 120 and Manipulator.GetBumper(frc::XboxController::kRightHand)==1) or Manipulator.GetYButton() ==1)
-      {
-        HoodPosition = 2 ;
-        ShooterSpeed = 4000;
-      }
-    else if ((Distance <= 120 and Manipulator.GetBumper(frc::XboxController::kRightHand)==1) or Manipulator.GetXButton() ==1 )
-      {
-          HoodPosition = 1 ;
-          ShooterSpeed = 4000;
-      }
-    else
-      {//Defualt Collapsed Position 
-        HoodPosition = 3 ;
-        ShooterSpeed = 2000;
-      }
+      // if(BumperShot == 1 and Manipulator.GetBumper(frc::XboxController::kRightHand)==0)
+      // {
+      //   HoodPosition = 2;
+      // }
+      // else if(BumperShot == 0 or Manipulator.GetBumper(frc::XboxController::kRightHand)==1)
+      // {
+      //   HoodPosition = 1;
+      // }
+        //Rev
+    //Defining PIDs
+      double ShooterP = .00200;
+      double ShooterI = 0.00000;
+      double ShooterD = 0.0000000;
+      double ShooterIz = 0;
+      double ShooterFF = .000205;
+    //Configuring PIDs
+      rev::CANPIDController ShooterPIDController = Shooter1.GetPIDController();
+      rev::CANPIDController Shooter2PIDController = Shooter2.GetPIDController();
+      ShooterPIDController.SetP(ShooterP);
+      ShooterPIDController.SetI(ShooterI);
+      ShooterPIDController.SetD(ShooterD);
+      ShooterPIDController.SetFF(ShooterFF);
+      ShooterPIDController.SetIZone(ShooterIz);
+      ShooterPIDController.SetOutputRange(-.9,9);
+      Shooter2PIDController.SetP(ShooterP);
+      Shooter2PIDController.SetI(ShooterI);
+      Shooter2PIDController.SetD(ShooterD);
+      Shooter2PIDController.SetFF(ShooterFF);
+      Shooter2PIDController.SetIZone(ShooterIz);
+      Shooter2PIDController.SetOutputRange(-.9,9);
 
+
+
+    //Current Limits
+      Shooter1.SetSmartCurrentLimit(40, 40, 11433);
+      Shooter2.SetSmartCurrentLimit(40, 40, 11433);
+      Shooter1.SetSecondaryCurrentLimit(40, 20);
+      Shooter2.SetSecondaryCurrentLimit(40, 20);
+    //Encoder
+      rev::CANEncoder ShooterEncoder = Shooter1.GetEncoder();
+      rev::CANEncoder ShooterEncoder2 = Shooter2.GetEncoder();
+    //  if (Manipulator.GetBumper(frc::XboxController::kLeftHand)==1 )
+    // {
+
+    //   Shooter2PIDController.SetReference(-ShooterSpeed, rev::ControlType::kVelocity);
+    //   ShooterPIDController.SetReference(ShooterSpeed, rev::ControlType::kVelocity); 
+    //   ShooterSpeed=2800;
+    //   //3000 = Intiation Line
+    // }
+    //    else
+    //  {   
+    //    Shooter1.Set(0);
+    //    Shooter2.Set(0);
+    //  }
+    //       //Indexer.Set(ControlMode::PercentOutput,-1);
+    //       // ShooterSpeed = 3000;
+        
+    //       Shooter1.Set(1);
+    //       Shooter2.Set(-1);
+    //     }
+    // else if (Manipulator.GetAButton()==0)
+    //   {
+    //     KickerWheel.Set(0);
+
+    //     // Shooter1.Set(rev::ControlType::kVelocity);
+    //     // Shooter1.Set(0);
+    //     //Indexer.Set(ControlMode::PercentOutput,0);
+    //     // ShooterSpeed = 0;
+    //   }
+  
+
+      // if (Manipulator.GetBumper(frc::XboxController::kLeftHand)==1)
+      // {
+      //   Shooter1.Set(1);
+      //   Shooter2.Set(-1);
+      // }
+      // else
+      // {
+      //   Shooter1.Set(0);
+      //   Shooter2.Set(0);
+      // }
+      if(Manipulator.GetAButton()==1)
+      {
+        KickerTimer.Start();
+        FlipWheel.Set(false); //in
+       // Indexer.Set(ControlMode::PercentOutput,-1);
+        if (KickerTimer.Get()>1.0)
+        {
+          KickerWheel.Set(1);
+        }
+      }
+      else
+      {
+        FlipWheel.Set(true); //out
+        KickerWheel.Set(0);
+        KickerTimer.Stop();
+       // Indexer.Set(ControlMode::PercentOutput, 0);
+      }
+      if (BumperShotToggle.ButtonPress(Manipulator.GetBumper(frc::XboxController::kLeftHand)==1))
+      {
+      Shooter2PIDController.SetReference(-ShooterSpeed, rev::ControlType::kVelocity);
+      ShooterPIDController.SetReference(ShooterSpeed, rev::ControlType::kVelocity); 
+      ShooterSpeed=3100;
+      //3100 far in trench and flapping open
+      //2200 bumpershot and flapping open
+      //2800
+      //3000
+      }
+      else 
+      {
+        Shooter1.Set(0);
+        Shooter2.Set(0);
+      }
+      
+
+    frc::SmartDashboard::PutNumber("Current1", Shooter1.GetOutputCurrent());
+    frc::SmartDashboard::PutNumber("ShooterVelocity", ShooterEncoder.GetVelocity() );
+   // frc::SmartDashboard::PutNumber("Current2", )
+   if ((ShooterEncoder.GetVelocity()<= (ShooterSpeed+100)) and (ShooterEncoder.GetVelocity()>= (ShooterSpeed-100)))
+   {
+     TargetSpeed = true;
+   }
+   else
+   {
+     TargetSpeed = false;
+   }
 
   }
 void Robot::ShootingAuto()
   {
+    Robot::ShootingPIDs();
     //Turret Restraints
       if(Turret.GetSelectedSensorPosition()>21000)
         {
@@ -612,46 +726,34 @@ void Robot::ShootingAuto()
           Turret.ConfigPeakOutputForward(.5,10);
         }
       else
-      {
-        Turret.ConfigPeakOutputForward(.5,10);
-        Turret.ConfigPeakOutputReverse(-.5,10);
-      }
+        {
+          Turret.ConfigPeakOutputForward(.5,10);
+          Turret.ConfigPeakOutputReverse(-.5,10);
+        }
+        //Setting velocity for shooter
+      rev::CANPIDController ShooterPIDController = Shooter1.GetPIDController();
+      rev::CANPIDController Shooter2PIDController = Shooter2.GetPIDController();
+      Shooter2PIDController.SetReference(-ShooterSpeed, rev::ControlType::kVelocity);
+      ShooterPIDController.SetReference(ShooterSpeed, rev::ControlType::kVelocity); 
+      ShooterSpeed = 2800;
+      if(ShooterSpeed >= 2700 and ShooterSpeed < 2900)
+        {
+          FlipWheel.Set(true);
+          Indexer.Set(ControlMode::PercentOutput, -1);
+          KickerWheel.Set(1);
+            
+        }
     //Setting Shooter Velocity
-      if (HoodPosition==1)
-        {
-          //BumperShot
-            ShooterHood1.Set(false);
-            ShooterHood2.Set(false);
-            Shooter1.Set(rev::ControlType::kVelocity);
-            Shooter1.Set(4000);
-            Shooter2.Follow(Shooter1, true);
-        }
-      else if (HoodPosition==2)
-        {
-          //Intiation Line
-            ShooterHood1.Set(true);
-            ShooterHood2.Set(false);
-            Shooter1.Set(rev::ControlType::kVelocity);
-            Shooter1.Set(4000);
-            Shooter2.Follow(Shooter1, true);
-        }
-      else if (HoodPosition==3)
-        {
-          //TrenchShot
-            ShooterHood1.Set(true);
-            ShooterHood2.Set(true);
-            Shooter1.Set(rev::ControlType::kVelocity);
-            Shooter1.Set(4000);
-            Shooter2.Follow(Shooter1, true);
-        }
-      if (Driver.GetXButton()==1)
-        {
-          KickerWheel.Set(.80);
-        }
-      else if(Driver.GetXButton()==0)
-        {
-          KickerWheel.Set(0);
-        }
+      
+      // if (Driver.GetXButton()==1)
+      //   {
+      //     KickerWheel.Set(.80);
+      //   }
+      // else if(Driver.GetXButton()==0)
+      //   {
+      //     KickerWheel.Set(0);
+      //   }
+
   }
 void Robot::Intaking()
   {
@@ -685,31 +787,94 @@ void Robot::Intaking()
         //  Intake.Set(rev::ControlType::kVelocity);
         //  Intake.Set(SetPoint);
         //  SetPoint = 2000; 
-         Intake.Set(.75);
-         //IntakePosition.Set(true);
+         Intake.Set(.6);
+         IntakePosition.Set(true);
+         //IndexerWheel.Set(ControlMode::PercentOutput, -.5);
+        // Indexer.Set(ControlMode::PercentOutput, -.4);
         }
       //Intake Out
       else if (Driver.GetBumper(frc::XboxController::kRightHand)==0 and Driver.GetBumper(frc::XboxController::kLeftHand)==1)
         {
-        Intake.Set(-.75);
-        //IntakePosition.Set(true);        
+        Intake.Set(-.6);
+        IntakePosition.Set(true); 
+        //IndexerWheel.Set(ControlMode::PercentOutput, -.5);
+       // Indexer.Set(ControlMode::PercentOutput, -.4);       
         }
       //Intake Off
       else 
         {
           Intake.Set(0);
-        //  IntakePosition.Set(false);
+          IntakePosition.Set(false);
+          //IndexerWheel.Set(ControlMode::PercentOutput, 0);
+          if (Manipulator.GetAButton()==0)
+         { //Indexer.Set(ControlMode::PercentOutput, 0);}
         }
         frc::SmartDashboard::PutNumber("SetPoint", SetPoint);
 
        
 
   }
+  }
 void Robot::Indexing()
   {//talon
-    Indexer.ConfigPeakCurrentLimit(30, 40);
+    //Indexer.ConfigPeakCurrentLimit(30, 40);
+    //Indexer.ConfigSupplyCurrentLimit(SupplyCurrentLimitConfiguration(true, 30, 35, 20));
+    //Indexer.EnableCurrentLimit(true);
       //Constant Turn
-      //Indexer.Set(ControlMode::PercentOutput, .25);
+      // if (Manipulator.GetBButton()==1 and Indexer.GetOutputCurrent()>20)
+      //   {
+      //     Indexer.Set(ControlMode::PercentOutput, -1);
+      //   }
+      double currentThresh = 1;
+      if(Manipulator.GetAButton()==0 and Driver.GetBumper(frc::XboxController::kLeftHand)==0 and Driver.GetBumper(frc::XboxController::kRightHand)==0 and Indexer.GetOutputCurrent()<currentThresh)
+        {
+          Indexer.Set(ControlMode::PercentOutput, 0);
+        }
+      else if (Manipulator.GetAButton()==0 and Driver.GetBumper(frc::XboxController::kLeftHand)==0 and Driver.GetBumper(frc::XboxController::kRightHand)==1 and Indexer.GetOutputCurrent()<currentThresh)
+        {
+          //Intake.Set(.75);
+          Indexer.Set(ControlMode::PercentOutput, -.3);
+        }
+      else if (Manipulator.GetAButton()==0 and Driver.GetBumper(frc::XboxController::kLeftHand)==1 and Driver.GetBumper(frc::XboxController::kRightHand)==0 and Indexer.GetOutputCurrent()<currentThresh)
+        {
+         // Intake.Set(-.75);
+          Indexer.Set(ControlMode::PercentOutput, -.3);
+        }
+      else if (Manipulator.GetAButton()==1 and Driver.GetBumper(frc::XboxController::kLeftHand)==0 and Driver.GetBumper(frc::XboxController::kRightHand)==1 and Indexer.GetOutputCurrent()<currentThresh)
+        {
+         // Intake.Set(.75);
+          Indexer.Set(ControlMode::PercentOutput, -.3);
+        }
+      else if(Manipulator.GetAButton()==1 and Driver.GetBumper(frc::XboxController::kLeftHand)==0 and Driver.GetBumper(frc::XboxController::kRightHand)==0 and Indexer.GetOutputCurrent()<currentThresh)
+        {
+          Indexer.Set(ControlMode::PercentOutput,-1);
+          KickerWheel.Set(.80);
+        }
+      else if(Indexer.GetOutputCurrent()>currentThresh)
+        {
+          AntiJamTimer.Start();
+          if(AntiJamTimer.Get()>= .5)
+            {
+              AntiJamTimerpt2.Reset();
+              Indexer.Set(ControlMode::PercentOutput, .25);
+            }
+          
+        }
+      else
+        {
+          if( AntiJamTimerpt2.Get()<2)
+          {
+            AntiJamTimerpt2.Start();
+            Indexer.Set(ControlMode::PercentOutput, .25);
+          }
+          else{
+            Indexer.Set(ControlMode::PercentOutput,0);
+            KickerWheel.Set(0);
+            AntiJamTimer.Stop();
+            AntiJamTimer.Reset();
+          }
+        }
+
     // if(Driver.GetBumper(frc::XboxController::kRightHand)==1)
     //   {
     //     Indexer.Set(ControlMode::PercentOutput, .5);
@@ -717,7 +882,7 @@ void Robot::Indexing()
     //   }
     // else if(Driver.GetBumper(frc::XboxController::kRightHand)==0)
     //   {
-    //     Indexer.Set(ControlMode::PercentOutput, .25);
+    //     Indexer.Set(ControlMode::PercentOutput, .5);
     //     //Mechanum wheelse spins backward
     //   }
   }
@@ -788,26 +953,42 @@ void Robot::ShootingPIDs()
   {
     //Rev
     //Defining PIDs
-      double ShooterP = 0;
-      double ShooterI = 0;
-      double ShooterD = 0;
+      double ShooterP = .00200;
+      double ShooterI = 0.00000;
+      double ShooterD = 0.0000000;
+      double ShooterIz = 0;
+      double ShooterFF = .000205;
     //Configuring PIDs
       rev::CANPIDController ShooterPIDController = Shooter1.GetPIDController();
+      rev::CANPIDController Shooter2PIDController = Shooter2.GetPIDController();
       ShooterPIDController.SetP(ShooterP);
       ShooterPIDController.SetI(ShooterI);
       ShooterPIDController.SetD(ShooterD);
+      ShooterPIDController.SetFF(ShooterFF);
+      ShooterPIDController.SetIZone(ShooterIz);
+      ShooterPIDController.SetOutputRange(-.9,9);
+      Shooter2PIDController.SetP(ShooterP);
+      Shooter2PIDController.SetI(ShooterI);
+      Shooter2PIDController.SetD(ShooterD);
+      Shooter2PIDController.SetFF(ShooterFF);
+      Shooter2PIDController.SetIZone(ShooterIz);
+      Shooter2PIDController.SetOutputRange(-.9,9);
     //Current Limits
       Shooter1.SetSmartCurrentLimit(25, 40, 11433);
       Shooter2.SetSmartCurrentLimit(25, 40, 11433);
       Shooter1.SetSecondaryCurrentLimit(40, 20);
       Shooter2.SetSecondaryCurrentLimit(40, 20);
     //Encoder
-      Shooter1.GetEncoder();
-      Shooter2.GetEncoder();
+      rev::CANEncoder ShooterEncoder = Shooter1.GetEncoder();
+      rev::CANEncoder ShooterEncoder2 = Shooter2.GetEncoder();
     //Control Mode
-      ShooterPIDController.SetReference(ShooterSpeed, rev::ControlType::kVelocity);
-      Shooter1.Set(rev::ControlType::kVelocity);
-      Shooter1.Set(ShooterSpeed);
+     // ShooterPIDController.SetReference(ShooterSpeed, rev::ControlType::kVelocity);
+     // Shooter1.Set(rev::ControlType::kVelocity);
+     // Shooter1.Set(ShooterSpeed);
+     // Shooter2.SetInverted(true);
+     // Shooter1.SetInverted(false);
+     // Shooter2.Follow(Shooter1, true);
+      //Shooter2.Set(Shooter1.Get());
   }
 void Robot::TurretPIDsShort()
   {
@@ -877,49 +1058,30 @@ void Robot::ClimbPIDs()
 void Robot::ShooterEquations()
   {
     //Getting Hood Position
-      if (ShooterHood1.Get() == false and ShooterHood2.Get() == false)
-        {
-          HoodPosition = 1 ;
-        }
-      else if (ShooterHood1.Get() == false and ShooterHood2.Get() == true)
-        {
-          HoodPosition = 2 ;
-        }
-      else if (Shooter1.Get() == true and ShooterHood2.Get() == true)
-        {
-          HoodPosition = 3 ;
-        }
+
     //Defining Hood Positions and Angles 
-      if(HoodPosition == 1)
+      if(HoodPosition == 1) //far shot
         {
           HoodAngle = 17;
           BallAngle = 90 - HoodAngle;
         }
-      else if (HoodPosition == 2)
+      else if (HoodPosition == 2) //Bumpershot
         {
-          HoodAngle = 24.5;
+          HoodAngle = 24.5; //62.5
           BallAngle = 90 - HoodAngle;
         }
-      else if (HoodPosition == 3)
-        {
-          HoodAngle = 62.5;
-          BallAngle = 90 - HoodAngle; 
-        }
+
       if (HoodPosition == 1)
       {
         ShooterHood1.Set(false);
-        ShooterHood2.Set(false);
+        
       }
       else if (HoodPosition ==2)
       {
         ShooterHood1.Set(true);
-        ShooterHood2.Set(false);
+        
       }
-      else if (HoodPosition == 3)
-      {
-        ShooterHood1.Set(true);
-        ShooterHood2.Set(true);
-      }
+
       
   }
 void Robot::StraightLine()
